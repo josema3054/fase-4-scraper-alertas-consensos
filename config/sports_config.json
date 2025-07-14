@@ -1,0 +1,64 @@
+{
+    "mlb": {
+        "name": "Major League Baseball",
+        "active": true,
+        "season_months": [3, 4, 5, 6, 7, 8, 9, 10, 11],
+        "scraping_times": ["09:00", "12:00", "15:00", "18:00"],
+        "covers_url": "https://www.covers.com/sports/mlb/matchups",
+        "consensus_threshold": 60.0,
+        "min_games_per_day": 1,
+        "max_games_per_day": 20,
+        "pregame_minutes": 15,
+        "bet_types": ["moneyline", "spread", "totals"],
+        "default_notifications": true
+    },
+    "nba": {
+        "name": "National Basketball Association",
+        "active": true,
+        "season_months": [10, 11, 12, 1, 2, 3, 4, 5, 6],
+        "scraping_times": ["10:00", "14:00", "17:00", "19:00"],
+        "covers_url": "https://www.covers.com/sports/nba/matchups",
+        "consensus_threshold": 65.0,
+        "min_games_per_day": 1,
+        "max_games_per_day": 16,
+        "pregame_minutes": 20,
+        "bet_types": ["moneyline", "spread", "totals"],
+        "default_notifications": true
+    },
+    "nfl": {
+        "name": "National Football League",
+        "active": true,
+        "season_months": [9, 10, 11, 12, 1, 2],
+        "scraping_times": ["10:00", "14:00", "17:00"],
+        "covers_url": "https://www.covers.com/sports/nfl/matchups",
+        "consensus_threshold": 70.0,
+        "min_games_per_day": 1,
+        "max_games_per_day": 16,
+        "pregame_minutes": 30,
+        "bet_types": ["moneyline", "spread", "totals"],
+        "default_notifications": true
+    },
+    "nhl": {
+        "name": "National Hockey League",
+        "active": true,
+        "season_months": [10, 11, 12, 1, 2, 3, 4, 5, 6],
+        "scraping_times": ["11:00", "15:00", "18:00"],
+        "covers_url": "https://www.covers.com/sports/nhl/matchups",
+        "consensus_threshold": 65.0,
+        "min_games_per_day": 1,
+        "max_games_per_day": 16,
+        "pregame_minutes": 20,
+        "bet_types": ["moneyline", "spread", "totals"],
+        "default_notifications": true
+    },
+    "global_settings": {
+        "default_scraping_interval": 60,
+        "max_retry_attempts": 3,
+        "request_timeout": 30,
+        "rate_limit_delay": 2,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "log_level": "INFO",
+        "backup_enabled": true,
+        "backup_retention_days": 30
+    }
+}
