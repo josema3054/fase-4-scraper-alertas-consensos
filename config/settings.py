@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     RETRY_DELAY: int = Field(default=60, env="RETRY_DELAY")
     
     # === ALERT THRESHOLDS ===
-    MLB_CONSENSUS_THRESHOLD: int = Field(default=80, env="MLB_CONSENSUS_THRESHOLD")
-    MIN_EXPERTS_VOTING: int = Field(default=4, env="MIN_EXPERTS_VOTING")
+    MLB_CONSENSUS_THRESHOLD: int = Field(default=70, env="MLB_CONSENSUS_THRESHOLD")
+    MIN_EXPERTS_VOTING: int = Field(default=23, env="MIN_EXPERTS_VOTING")
     
     # === LOGGING ===
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
@@ -60,8 +60,8 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # URLs base para scraping
-COVERS_BASE_URL = "https://www.covers.com"
-COVERS_MLB_URL = f"{COVERS_BASE_URL}/sports/mlb/picks"
+COVERS_BASE_URL = "https://contests.covers.com"
+COVERS_MLB_URL = f"{COVERS_BASE_URL}/consensus/topoverunderconsensus/mlb/expert"
 
 # Headers para requests
 DEFAULT_HEADERS = {

@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
 
-def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
+def setup_logger(name: str, level: str = "DEBUG") -> logging.Logger:
     """
     Configurar logger con rotación de archivos y formato personalizado
     

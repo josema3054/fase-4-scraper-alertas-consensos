@@ -7,19 +7,28 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 from supabase import create_client, Client
 
-from ..utils.logger import get_logger
-from ..utils.error_handler import retry_on_failure, log_exception
-from ..config.settings import settings, DATABASE_TABLES
+from src.utils.logger import get_logger
+from src.utils.error_handler import retry_on_failure, log_exception
+from config.settings import Settings
 
 logger = get_logger('supabase_client')
+
+# Definir nombres de tablas
+DATABASE_TABLES = {
+    "consensus_data": "consensus_data",
+    "consensus_alerts": "consensus_alerts", 
+    "matches": "matches",
+    "system_logs": "system_logs"
+}
 
 class SupabaseClient:
     """Cliente para interactuar con Supabase"""
     
     def __init__(self):
+        self.settings = Settings()
         self.supabase: Client = create_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_KEY
+            self.settings.SUPABASE_URL,
+            self.settings.SUPABASE_KEY
         )
         logger.info("✅ Cliente Supabase inicializado")
     

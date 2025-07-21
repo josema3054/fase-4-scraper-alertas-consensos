@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import logging
 from typing import Optional, Callable
 from src.utils.logger import get_logger
-from src.utils.error_handler import handle_errors
+from src.utils.error_handler import ErrorHandler, log_exception
 from .mlb_scraper import MLBScraper
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ class ConsensusScheduler:
         self.on_daily_report = on_daily_report
         logger.info("Callbacks configurados")
     
-    @handle_errors
+    @log_exception
     def setup_mlb_schedule(self):
         """Configura el horario de scraping para MLB"""
         logger.info("Configurando horarios de scraping para MLB")
@@ -105,7 +105,7 @@ class ConsensusScheduler:
         
         logger.info("Horarios de MLB configurados exitosamente")
     
-    @handle_errors
+    @log_exception
     def _scrape_mlb_daily(self):
         """Ejecuta scraping diario completo de MLB"""
         logger.info("🏈 Iniciando scraping diario de MLB")
@@ -135,7 +135,7 @@ class ConsensusScheduler:
             
             raise
     
-    @handle_errors
+    @log_exception
     def _scrape_mlb_live(self):
         """Ejecuta scraping de consensos en vivo"""
         logger.info("⚡ Iniciando scraping en vivo de MLB")
@@ -164,7 +164,7 @@ class ConsensusScheduler:
             
             raise
     
-    @handle_errors
+    @log_exception
     def _generate_daily_report(self):
         """Genera reporte diario del sistema"""
         logger.info("📊 Generando reporte diario")
@@ -195,7 +195,7 @@ class ConsensusScheduler:
             
             raise
     
-    @handle_errors
+    @log_exception
     def _cleanup_old_logs(self):
         """Limpia logs antiguos del sistema"""
         logger.info("🧹 Iniciando limpieza de logs antiguos")

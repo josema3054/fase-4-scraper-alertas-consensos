@@ -1,0 +1,26 @@
+{
+  "exito": true,
+  "fecha_procesada": "2025-07-20",
+  "timestamp": "2025-07-20T07:21:52.007482-03:00",
+  "datos_extraidos": 10,
+  "datos_completos": 0,
+  "datos_parciales": 10,
+  "consensos_filtrados": 0,
+  "filtros_aplicados": {
+    "total_inicial": 10,
+    "filtrados": 0,
+    "rechazados_por": {
+      "umbral_consenso": 0,
+      "pocos_expertos": 0,
+      "datos_incompletos": 10,
+      "fuera_de_horario": 0,
+      "direccion_no_permitida": 0,
+      "total_line_invalido": 0,
+      "otros": 0
+    }
+  },
+  "alertas_nuevas": 0,
+  "alertas_enviadas": 0,
+  "tiempo_total": 17.57,
+  "consensos_por_segundo": 0.57
+}

@@ -1,0 +1,18 @@
+{
+  "umbral_minimo": 70,
+  "expertos_minimos": 15,
+  "picks_minimos": 8,
+  "direccion_permitida": [
+    "OVER",
+    "UNDER"
+  ],
+  "total_line_min": 6.0,
+  "total_line_max": 15.0,
+  "filtros_por_hora": {},
+  "horas_scraping": [
+    "09:00",
+    "antes_partido"
+  ],
+  "minutos_antes_partido": 15,
+  "ultima_actualizacion": "2025-07-21T05:23:10.651684-03:00"
+}

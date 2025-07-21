@@ -3,6 +3,7 @@ Manejo de errores y reintentos del sistema
 """
 
 import asyncio
+import time
 import traceback
 from datetime import datetime
 from typing import Callable, Any, Optional
@@ -66,32 +67,55 @@ def retry_on_failure(max_retries: int = 3, delay: int = 60, exceptions: tuple = 
         exceptions: Tupla de excepciones a capturar
     """
     def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
-            last_exception = None
-            
-            for attempt in range(max_retries + 1):
-                try:
-                    if asyncio.iscoroutinefunction(func):
-                        return await func(*args, **kwargs)
-                    else:
-                        return func(*args, **kwargs)
-                        
-                except exceptions as e:
-                    last_exception = e
-                    
-                    if attempt < max_retries:
-                        logger.warning(f"⚠️ Intento {attempt + 1}/{max_retries + 1} falló: {str(e)}")
-                        logger.info(f"⏳ Esperando {delay}s antes del siguiente intento...")
-                        await asyncio.sleep(delay)
-                    else:
-                        logger.error(f"❌ Todos los intentos fallaron para {func.__name__}")
-            
-            # Si llegamos aquí, todos los intentos fallaron
-            if last_exception:
-                raise last_exception
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs) -> Any:
+                last_exception = None
                 
-        return wrapper
+                for attempt in range(max_retries + 1):
+                    try:
+                        return await func(*args, **kwargs)
+                            
+                    except exceptions as e:
+                        last_exception = e
+                        
+                        if attempt < max_retries:
+                            logger.warning(f"⚠️ Intento {attempt + 1}/{max_retries + 1} falló: {str(e)}")
+                            logger.info(f"⏳ Esperando {delay}s antes del siguiente intento...")
+                            await asyncio.sleep(delay)
+                        else:
+                            logger.error(f"❌ Todos los intentos fallaron para {func.__name__}")
+                
+                # Si llegamos aquí, todos los intentos fallaron
+                if last_exception:
+                    raise last_exception
+            
+            return async_wrapper
+        else:
+            @wraps(func)
+            def sync_wrapper(*args, **kwargs) -> Any:
+                last_exception = None
+                
+                for attempt in range(max_retries + 1):
+                    try:
+                        return func(*args, **kwargs)
+                            
+                    except exceptions as e:
+                        last_exception = e
+                        
+                        if attempt < max_retries:
+                            logger.warning(f"⚠️ Intento {attempt + 1}/{max_retries + 1} falló: {str(e)}")
+                            logger.info(f"⏳ Esperando {delay}s antes del siguiente intento...")
+                            time.sleep(delay)
+                        else:
+                            logger.error(f"❌ Todos los intentos fallaron para {func.__name__}")
+                
+                # Si llegamos aquí, todos los intentos fallaron
+                if last_exception:
+                    raise last_exception
+            
+            return sync_wrapper
+                
     return decorator
 
 def safe_execute(func: Callable, *args, default_return=None, **kwargs) -> Any:
@@ -188,14 +212,22 @@ error_handler = ErrorHandler()
 
 def log_exception(func: Callable) -> Callable:
     """Decorador simple para loggear excepciones"""
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            if asyncio.iscoroutinefunction(func):
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            try:
                 return await func(*args, **kwargs)
-            else:
+            except Exception as e:
+                logger.error(f"❌ Excepción en {func.__name__}: {str(e)}", exc_info=True)
+                raise
+        return async_wrapper
+    else:
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            try:
                 return func(*args, **kwargs)
-        except Exception as e:
-            logger.error(f"❌ Excepción en {func.__name__}: {str(e)}", exc_info=True)
-            raise
+            except Exception as e:
+                logger.error(f"❌ Excepción en {func.__name__}: {str(e)}", exc_info=True)
+                raise
+        return sync_wrapper
     return wrapper

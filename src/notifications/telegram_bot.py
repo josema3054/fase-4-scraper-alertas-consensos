@@ -10,7 +10,7 @@ import pytz
 from typing import List, Dict, Optional, Union
 import json
 from src.utils.logger import get_logger
-from src.utils.error_handler import handle_errors
+from src.utils.error_handler import ErrorHandler, log_exception
 
 logger = get_logger(__name__)
 
@@ -120,7 +120,7 @@ class TelegramNotifier:
             parse_mode='Markdown'
         )
     
-    @handle_errors
+    @log_exception
     async def send_consensus_alert(self, consensos: List[Dict], tipo: str = 'daily'):
         """
         Envía alerta de consensos detectados
@@ -180,7 +180,7 @@ class TelegramNotifier:
         await self.send_message(mensaje)
         logger.info(f"Alerta enviada: {len(high_consensus)} consensos altos")
     
-    @handle_errors
+    @log_exception
     async def send_daily_report(self, report_data: Dict):
         """
         Envía reporte diario del sistema
@@ -218,7 +218,7 @@ class TelegramNotifier:
         await self.send_message(mensaje)
         logger.info("Reporte diario enviado")
     
-    @handle_errors
+    @log_exception
     async def send_error_alert(self, error_msg: str, context: str):
         """
         Envía alerta de error del sistema
@@ -245,7 +245,7 @@ Si el problema persiste, se requiere intervención manual.
         await self.send_message(mensaje)
         logger.info(f"Alerta de error enviada: {context}")
     
-    @handle_errors
+    @log_exception
     async def send_system_status(self, status_data: Dict):
         """
         Envía estado del sistema bajo demanda
@@ -282,7 +282,7 @@ Si el problema persiste, se requiere intervención manual.
         await self.send_message(mensaje)
         logger.info("Estado del sistema enviado")
     
-    @handle_errors
+    @log_exception
     async def send_message(self, text: str, parse_mode: str = 'Markdown'):
         """
         Envía mensaje a todos los chats configurados
@@ -308,7 +308,7 @@ Si el problema persiste, se requiere intervención manual.
                 logger.error(f"Error al enviar mensaje a chat {chat_id}: {e}")
                 continue
     
-    @handle_errors
+    @log_exception
     async def test_connection(self) -> bool:
         """
         Prueba la conexión del bot

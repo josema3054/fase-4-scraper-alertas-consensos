@@ -1,0 +1,262 @@
+{
+  "2025-07-21": {
+    "97e2f1f849bb": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 17%",
+      "timestamp": "2025-07-21T09:05:25.146740-03:00"
+    },
+    "c4e3629bfc30": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 83%",
+      "timestamp": "2025-07-21T09:05:25.149793-03:00"
+    },
+    "8c9e422d048e": {
+      "equipo_visitante": "HOU",
+      "equipo_local": "AZ",
+      "consenso": "OVER 83%",
+      "timestamp": "2025-07-21T09:05:25.158252-03:00"
+    },
+    "5374b4cedcc5": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 20%",
+      "timestamp": "2025-07-21T09:05:25.166170-03:00"
+    },
+    "ddb1edc5c05e": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 75%",
+      "timestamp": "2025-07-21T08:01:24.393359-03:00"
+    },
+    "065cf6aea463": {
+      "equipo_visitante": "DET",
+      "equipo_local": "PIT",
+      "consenso": "OVER 33%",
+      "timestamp": "2025-07-21T10:21:52.331873-03:00"
+    },
+    "1d640e420008": {
+      "equipo_visitante": "LAA",
+      "equipo_local": "NYM",
+      "consenso": "OVER 38%",
+      "timestamp": "2025-07-21T08:01:24.399154-03:00"
+    },
+    "d4060cad40d9": {
+      "equipo_visitante": "SF",
+      "equipo_local": "ATL",
+      "consenso": "OVER 38%",
+      "timestamp": "2025-07-21T08:01:24.401791-03:00"
+    },
+    "e328f01caff6": {
+      "equipo_visitante": "CHW",
+      "equipo_local": "TB",
+      "consenso": "OVER 38%",
+      "timestamp": "2025-07-21T09:05:25.169741-03:00"
+    },
+    "6a108d3f0bc9": {
+      "equipo_visitante": "NYY",
+      "equipo_local": "TOR",
+      "consenso": "OVER 60%",
+      "timestamp": "2025-07-21T08:01:24.407825-03:00"
+    },
+    "b3870c4d370e": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 82%",
+      "timestamp": "2025-07-21T08:06:35.547449-03:00"
+    },
+    "d300b56a1394": {
+      "equipo_visitante": "NYY",
+      "equipo_local": "TOR",
+      "consenso": "OVER 67%",
+      "timestamp": "2025-07-21T09:05:25.168716-03:00"
+    },
+    "a5b3e0fd1006": {
+      "equipo_visitante": "MIN",
+      "equipo_local": "LAD",
+      "consenso": "OVER 57%",
+      "timestamp": "2025-07-21T08:06:35.555877-03:00"
+    },
+    "8489a8d5b052": {
+      "equipo_visitante": "LAA",
+      "equipo_local": "NYM",
+      "consenso": "OVER 44%",
+      "timestamp": "2025-07-21T08:06:35.556771-03:00"
+    },
+    "c0b69cd9948a": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 83%",
+      "timestamp": "2025-07-21T09:05:25.152090-03:00"
+    },
+    "cdab7cc2fef6": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 20%",
+      "timestamp": "2025-07-21T09:05:25.162456-03:00"
+    },
+    "3b2df88fdfa8": {
+      "equipo_visitante": "MIN",
+      "equipo_local": "LAD",
+      "consenso": "OVER 63%",
+      "timestamp": "2025-07-21T09:05:25.171793-03:00"
+    },
+    "c499a23daaf3": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 14%",
+      "timestamp": "2025-07-21T10:21:52.314448-03:00"
+    },
+    "f8453106b143": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 79%",
+      "timestamp": "2025-07-21T10:21:52.318322-03:00"
+    },
+    "349cd2d02470": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 22%",
+      "timestamp": "2025-07-21T10:21:52.320658-03:00"
+    },
+    "613c8481c416": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 27%",
+      "timestamp": "2025-07-21T10:21:52.322350-03:00"
+    },
+    "7591efb60ecb": {
+      "equipo_visitante": "HOU",
+      "equipo_local": "AZ",
+      "consenso": "OVER 71%",
+      "timestamp": "2025-07-21T12:28:26.606525-03:00"
+    },
+    "315a69a331df": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 60%",
+      "timestamp": "2025-07-21T10:21:52.334040-03:00"
+    },
+    "6ebe34f0a1fe": {
+      "equipo_visitante": "LAA",
+      "equipo_local": "NYM",
+      "consenso": "OVER 42%",
+      "timestamp": "2025-07-21T10:21:52.335256-03:00"
+    },
+    "2fed859bfe50": {
+      "equipo_visitante": "MIL",
+      "equipo_local": "SEA",
+      "consenso": "OVER 43%",
+      "timestamp": "2025-07-21T11:58:53.983066-03:00"
+    },
+    "c3d889b8c1f1": {
+      "equipo_visitante": "NYY",
+      "equipo_local": "TOR",
+      "consenso": "OVER 56%",
+      "timestamp": "2025-07-21T10:21:52.337783-03:00"
+    },
+    "21bd95dcaa54": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 10%",
+      "timestamp": "2025-07-21T11:18:18.856580-03:00"
+    },
+    "955e23daaa49": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 20%",
+      "timestamp": "2025-07-21T11:58:53.951922-03:00"
+    },
+    "5f42ccc2e331": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 73%",
+      "timestamp": "2025-07-21T11:58:53.961256-03:00"
+    },
+    "e2290c3d1f7d": {
+      "equipo_visitante": "KC",
+      "equipo_local": "CHC",
+      "consenso": "OVER 67%",
+      "timestamp": "2025-07-21T12:28:26.610353-03:00"
+    },
+    "28d8fe9c7baa": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 35%",
+      "timestamp": "2025-07-21T11:18:18.877751-03:00"
+    },
+    "b782e6debefc": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 64%",
+      "timestamp": "2025-07-21T11:58:53.973810-03:00"
+    },
+    "adf6f55856e1": {
+      "equipo_visitante": "DET",
+      "equipo_local": "PIT",
+      "consenso": "OVER 40%",
+      "timestamp": "2025-07-21T11:58:53.979122-03:00"
+    },
+    "055d1ab524f6": {
+      "equipo_visitante": "SF",
+      "equipo_local": "ATL",
+      "consenso": "OVER 43%",
+      "timestamp": "2025-07-21T12:28:26.625198-03:00"
+    },
+    "d7b896ab5369": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 9%",
+      "timestamp": "2025-07-21T11:58:53.946333-03:00"
+    },
+    "601e0fec13a2": {
+      "equipo_visitante": "KC",
+      "equipo_local": "CHC",
+      "consenso": "OVER 75%",
+      "timestamp": "2025-07-21T11:58:53.955503-03:00"
+    },
+    "e4d1be829bf1": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 33%",
+      "timestamp": "2025-07-21T12:28:26.614275-03:00"
+    },
+    "c4f003898f8b": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 15%",
+      "timestamp": "2025-07-21T12:28:26.591693-03:00"
+    },
+    "1e485e532fda": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 18%",
+      "timestamp": "2025-07-21T12:28:26.596788-03:00"
+    },
+    "3b31c6c0c46f": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 72%",
+      "timestamp": "2025-07-21T12:28:26.598805-03:00"
+    },
+    "df51b48b9775": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 71%",
+      "timestamp": "2025-07-21T12:28:26.600955-03:00"
+    },
+    "cd3d2d858ed6": {
+      "equipo_visitante": "DET",
+      "equipo_local": "PIT",
+      "consenso": "OVER 41%",
+      "timestamp": "2025-07-21T12:28:26.618333-03:00"
+    },
+    "7549026676e3": {
+      "equipo_visitante": "CHW",
+      "equipo_local": "TB",
+      "consenso": "OVER 57%",
+      "timestamp": "2025-07-21T12:28:26.620390-03:00"
+    }
+  }
+}

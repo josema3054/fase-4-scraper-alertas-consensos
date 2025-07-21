@@ -10,15 +10,16 @@ import pytz
 from typing import List, Dict, Optional
 import time
 import logging
+import re
 from src.utils.logger import get_logger
-from src.utils.error_handler import handle_errors, retry_on_failure
+from src.utils.error_handler import ErrorHandler, retry_on_failure, log_exception
 
 logger = get_logger(__name__)
 
 class MLBScraper:
     """Scraper para consensos de MLB desde covers.com"""
     
-    def __init__(self, base_url: str = "https://www.covers.com/sports/mlb/consensus"):
+    def __init__(self, base_url: str = "https://contests.covers.com/consensus/topoverunderconsensus/all/expert"):
         self.base_url = base_url
         self.session = requests.Session()
         self.session.headers.update({
@@ -33,12 +34,11 @@ class MLBScraper:
         # Configurar zona horaria de Argentina
         self.timezone = pytz.timezone('America/Argentina/Buenos_Aires')
     
-    @retry_on_failure(max_attempts=3, delay=5)
-    def get_page_content(self, url: str) -> Optional[BeautifulSoup]:
-        """Obtiene el contenido HTML de una página"""
+    def get_page_content_sync(self, url: str, timeout: int = 30) -> Optional[BeautifulSoup]:
+        """Obtiene el contenido HTML de una página (versión síncrona)"""
         try:
             logger.info(f"Obteniendo contenido de: {url}")
-            response = self.session.get(url, timeout=30)
+            response = self.session.get(url, timeout=timeout)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -49,10 +49,14 @@ class MLBScraper:
             logger.error(f"Error al obtener página {url}: {e}")
             raise
         except Exception as e:
-            logger.error(f"Error inesperado al parsear página {url}: {e}")
+            logger.error(f"Error inesperado al procesar página {url}: {e}")
             raise
+
+    def get_page_content(self, url: str, timeout: int = 30) -> Optional[BeautifulSoup]:
+        """Alias para mantener compatibilidad con el código existente"""
+        return self.get_page_content_sync(url, timeout)
     
-    @handle_errors
+    @log_exception
     def scrape_mlb_consensus(self, date: Optional[str] = None) -> List[Dict]:
         """
         Scrape consensos de MLB para una fecha específica
@@ -66,10 +70,10 @@ class MLBScraper:
         if date is None:
             date = datetime.now(self.timezone).strftime('%Y-%m-%d')
         
-        logger.info(f"Iniciando scraping de consensos MLB para fecha: {date}")
+        logger.info(f"Iniciando scraping de consensos MLB TOTALES para fecha: {date}")
         
-        # URL para la fecha específica
-        url = f"{self.base_url}?date={date}"
+        # URL para la fecha específica (formato covers.com)
+        url = f"{self.base_url}/{date}"
         soup = self.get_page_content(url)
         
         if not soup:
@@ -79,27 +83,60 @@ class MLBScraper:
         consensos = []
         
         try:
-            # Buscar tabla de consensos (estructura típica de covers.com)
-            consensus_tables = soup.find_all('table', class_=['consensus-table', 'table', 'data-table'])
+            # Buscar específicamente la tabla con clase "responsive"
+            table = soup.find('table', class_='responsive')
             
-            if not consensus_tables:
-                # Intentar con selectores más específicos
-                consensus_sections = soup.find_all('div', class_=['consensus', 'betting-consensus', 'picks-consensus'])
-                logger.info(f"Encontradas {len(consensus_sections)} secciones de consenso")
+            if not table:
+                logger.warning("No se encontró tabla con clase 'responsive'")
+                # Fallback: buscar cualquier tabla
+                table = soup.find('table')
+                if not table:
+                    logger.warning("No se encontró ninguna tabla en la página")
+                    return []
             
-            # Buscar filas de partidos
-            game_rows = soup.find_all('tr', class_=['game-row', 'consensus-row', 'picks-row'])
+            # Buscar todas las filas de la tabla (excluir header)
+            rows = table.find_all('tr')
+            logger.info(f"Encontradas {len(rows)} filas en la tabla")
             
-            for row in game_rows:
+            # Filtrar filas de datos (que tengan suficientes celdas)
+            game_rows = []
+            for i, row in enumerate(rows):
+                cells = row.find_all('td')
+                row_text = row.get_text(strip=True)
+                
+                logger.debug(f"Fila {i}: {len(cells)} celdas - '{row_text[:100]}...'")
+                
+                # Criterios menos restrictivos para encontrar filas válidas
+                if len(cells) >= 3:  # Reducido a 3 columnas mínimo
+                    # Verificar que contenga indicadores de partido
+                    has_teams = bool(re.search(r'[A-Z]{2,3}', row_text))
+                    has_percentage = '%' in row_text
+                    has_time = bool(re.search(r'\d{1,2}:\d{2}', row_text))
+                    
+                    # Si tiene equipos Y (porcentajes O hora), es candidata
+                    if has_teams and (has_percentage or has_time):
+                        game_rows.append(row)
+                        logger.debug(f"Fila {i} añadida como válida: equipos={has_teams}, %={has_percentage}, hora={has_time}")
+                    else:
+                        logger.debug(f"Fila {i} descartada: equipos={has_teams}, %={has_percentage}, hora={has_time}")
+                else:
+                    logger.debug(f"Fila {i} descartada: solo {len(cells)} celdas")
+            
+            logger.info(f"Encontradas {len(game_rows)} filas con datos válidos de partidos")
+            
+            # Procesar cada fila válida
+            for i, row in enumerate(game_rows):
                 try:
                     consensus_data = self._extract_consensus_from_row(row, date)
                     if consensus_data:
                         consensos.append(consensus_data)
+                        logger.info(f"Consenso {i+1} extraído: {consensus_data['equipo_visitante']} @ {consensus_data['equipo_local']} - "
+                                  f"{consensus_data['direccion_consenso']}: {consensus_data['porcentaje_consenso']}% ({consensus_data['num_experts']} expertos)")
                 except Exception as e:
-                    logger.warning(f"Error al procesar fila de consenso: {e}")
+                    logger.debug(f"Fila {i+1} no procesable: {str(e)[:100]}")
                     continue
             
-            logger.info(f"Scraped {len(consensos)} consensos para fecha {date}")
+            logger.info(f"Total consensos válidos extraídos: {len(consensos)}")
             
         except Exception as e:
             logger.error(f"Error durante scraping de consensos: {e}")
@@ -108,69 +145,180 @@ class MLBScraper:
         return consensos
     
     def _extract_consensus_from_row(self, row, date: str) -> Optional[Dict]:
-        """Extrae datos de consenso de una fila de la tabla"""
+        """Extrae datos de consenso de totales (Over/Under) de una fila de la tabla"""
         try:
-            # Estructura típica de datos que buscamos
+            # Obtener todas las celdas de la fila
+            cells = row.find_all('td')
+            if len(cells) < 3:  # Reducido a 3 celdas mínimo
+                return None
+            
+            # Obtener texto de todas las celdas para análisis
+            all_row_text = row.get_text(strip=True)
+            logger.debug(f"Analizando fila con {len(cells)} celdas: {all_row_text[:200]}...")
+            
+            # Mostrar contenido de cada celda para depuración
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                logger.debug(f"  Celda {i}: '{cell_text[:50]}...'")
+            
+            # Inicializar datos del consenso
             consensus_data = {
                 'fecha': date,
                 'fecha_scraping': datetime.now(self.timezone).isoformat(),
                 'deporte': 'MLB',
-                'equipo_local': '',
-                'equipo_visitante': '',
-                'consenso_spread': 0,
-                'consenso_total': 0,
-                'consenso_moneyline': 0,
-                'porcentaje_spread': 0.0,
-                'porcentaje_total': 0.0,
-                'porcentaje_moneyline': 0.0,
+                'tipo_consenso': 'TOTAL',
+                'equipo_local': 'Unknown',
+                'equipo_visitante': 'Unknown',
+                'total_line': 0.0,
+                'consenso_over': 0,
+                'consenso_under': 0,
+                'porcentaje_consenso': 0.0,
+                'direccion_consenso': '',
+                'num_experts': 0,
                 'hora_partido': '',
                 'url_fuente': self.base_url
             }
             
-            # Extraer nombres de equipos
-            team_cells = row.find_all(['td', 'div'], class_=['team', 'teams', 'matchup'])
-            if team_cells:
-                team_text = team_cells[0].get_text(strip=True)
-                if ' @ ' in team_text:
-                    teams = team_text.split(' @ ')
-                    consensus_data['equipo_visitante'] = teams[0].strip()
-                    consensus_data['equipo_local'] = teams[1].strip()
-                elif ' vs ' in team_text:
-                    teams = team_text.split(' vs ')
-                    consensus_data['equipo_visitante'] = teams[0].strip()
-                    consensus_data['equipo_local'] = teams[1].strip()
+            # Buscar equipos en cualquier celda
+            team_found = False
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                
+                # Patrones de equipos
+                team_patterns = [
+                    r'([A-Z]{2,3})\s+@\s+([A-Z]{2,3})',  # CHI @ HOU
+                    r'([A-Z]{2,3})\s+([A-Z]{2,3})',      # CHI HOU
+                    r'(\w+)\s+@\s+(\w+)'                  # Nombres completos
+                ]
+                
+                for pattern in team_patterns:
+                    team_match = re.search(pattern, cell_text)
+                    if team_match:
+                        consensus_data['equipo_visitante'] = team_match.group(1)
+                        consensus_data['equipo_local'] = team_match.group(2)
+                        team_found = True
+                        logger.debug(f"Equipos encontrados en celda {i}: {consensus_data['equipo_visitante']} @ {consensus_data['equipo_local']}")
+                        break
+                
+                if team_found:
+                    break
             
-            # Extraer porcentajes de consenso
-            percentage_cells = row.find_all(['td', 'span'], class_=['percentage', 'consensus-pct', 'pct'])
+            # Buscar hora del partido en cualquier celda
+            time_found = False
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                time_match = re.search(r'(\d{1,2}:\d{2}\s*[ap]m\s*ET)', cell_text, re.IGNORECASE)
+                if time_match:
+                    consensus_data['hora_partido'] = time_match.group(1)
+                    time_found = True
+                    logger.debug(f"Hora encontrada en celda {i}: {consensus_data['hora_partido']}")
+                    break
             
-            for i, cell in enumerate(percentage_cells[:3]):  # Máximo 3 porcentajes
-                pct_text = cell.get_text(strip=True).replace('%', '')
-                try:
-                    percentage = float(pct_text)
-                    if i == 0:
-                        consensus_data['porcentaje_spread'] = percentage
-                    elif i == 1:
-                        consensus_data['porcentaje_total'] = percentage
-                    elif i == 2:
-                        consensus_data['porcentaje_moneyline'] = percentage
-                except ValueError:
-                    continue
+            # Buscar consenso Over/Under en cualquier celda
+            consensus_found = False
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                
+                # Buscar patrones como "80% Under" o "74% Over"
+                over_match = re.search(r'(\d+)%\s*Over', cell_text, re.IGNORECASE)
+                under_match = re.search(r'(\d+)%\s*Under', cell_text, re.IGNORECASE)
+                
+                if over_match:
+                    consensus_data['consenso_over'] = int(over_match.group(1))
+                    consensus_data['porcentaje_consenso'] = int(over_match.group(1))
+                    consensus_data['direccion_consenso'] = 'OVER'
+                    consensus_found = True
+                    logger.debug(f"Consenso OVER encontrado en celda {i}: {consensus_data['porcentaje_consenso']}%")
+                    break
+                elif under_match:
+                    consensus_data['consenso_under'] = int(under_match.group(1))
+                    consensus_data['porcentaje_consenso'] = int(under_match.group(1))
+                    consensus_data['direccion_consenso'] = 'UNDER'
+                    consensus_found = True
+                    logger.debug(f"Consenso UNDER encontrado en celda {i}: {consensus_data['porcentaje_consenso']}%")
+                    break
             
-            # Extraer hora del partido
-            time_cells = row.find_all(['td', 'span'], class_=['time', 'game-time', 'start-time'])
-            if time_cells:
-                consensus_data['hora_partido'] = time_cells[0].get_text(strip=True)
+            # Si el porcentaje Over/Under no se encuentra, calcular el complementario
+            if consensus_data['consenso_over'] > 0 and consensus_data['consenso_under'] == 0:
+                consensus_data['consenso_under'] = 100 - consensus_data['consenso_over']
+            elif consensus_data['consenso_under'] > 0 and consensus_data['consenso_over'] == 0:
+                consensus_data['consenso_over'] = 100 - consensus_data['consenso_under']
             
-            # Solo devolver si encontramos al menos los equipos
-            if consensus_data['equipo_local'] and consensus_data['equipo_visitante']:
+            # Mantener compatibilidad
+            consensus_data['porcentaje_total'] = consensus_data['porcentaje_consenso']
+            
+            # Buscar línea del total en cualquier celda
+            total_found = False
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                # Buscar números que puedan ser totales (entre 6.0 y 15.0)
+                total_matches = re.findall(r'(\d+(?:\.\d+)?)', cell_text)
+                for total_str in total_matches:
+                    total_val = float(total_str)
+                    if 6.0 <= total_val <= 15.0:  # Rango típico de totales MLB
+                        consensus_data['total_line'] = total_val
+                        total_found = True
+                        logger.debug(f"Total encontrado en celda {i}: {total_val}")
+                        break
+                if total_found:
+                    break
+            
+            # Buscar número de expertos en cualquier celda
+            experts_found = False
+            for i, cell in enumerate(cells):
+                cell_text = cell.get_text(strip=True)
+                
+                # Buscar patrones de números de expertos
+                pick_numbers = re.findall(r'\b(\d+)\b', cell_text)
+                
+                # Filtrar números que puedan ser expertos (típicamente entre 1 y 100)
+                valid_numbers = [int(num) for num in pick_numbers if 1 <= int(num) <= 100]
+                
+                if len(valid_numbers) >= 2:
+                    # Si hay dos números válidos, sumarlos (ej: "15 + 4" = 19)
+                    consensus_data['num_experts'] = sum(valid_numbers[:2])
+                    experts_found = True
+                    logger.debug(f"Expertos (suma) encontrados en celda {i}: {valid_numbers[:2]} = {consensus_data['num_experts']}")
+                    break
+                elif len(valid_numbers) == 1:
+                    # Si hay un solo número válido, usarlo directamente
+                    consensus_data['num_experts'] = valid_numbers[0]
+                    experts_found = True
+                    logger.debug(f"Expertos encontrados en celda {i}: {consensus_data['num_experts']}")
+                    break
+            
+            # Logging de depuración de toda la fila
+            logger.debug(f"Fila procesada - Equipos: {team_found}, Hora: {time_found}, Consenso: {consensus_found}, Total: {total_found}, Expertos: {experts_found}")
+            
+            # Validar que tenemos datos mínimos válidos (criterios relajados)
+            valid_team = (consensus_data['equipo_visitante'] != 'Unknown' and
+                         consensus_data['equipo_local'] != 'Unknown')
+            valid_consensus = (consensus_data['porcentaje_consenso'] > 0 and 
+                             consensus_data['direccion_consenso'])
+            valid_experts = consensus_data['num_experts'] > 0
+            
+            # Mostrar estado de validación
+            logger.debug(f"Validación - Equipos: {valid_team}, Consenso: {valid_consensus}, Expertos: {valid_experts}")
+            
+            # Criterio mínimo: debe tener equipos Y (consenso O expertos)
+            if valid_team and (valid_consensus or valid_experts):
+                logger.info(f"Consenso válido extraído: {consensus_data['equipo_visitante']} @ {consensus_data['equipo_local']} - "
+                           f"{consensus_data['direccion_consenso']}: {consensus_data['porcentaje_consenso']}% ({consensus_data['num_experts']} expertos)")
                 return consensus_data
+            else:
+                logger.debug(f"Fila no válida - Equipos válidos: {valid_team}, "
+                           f"Consenso válido: {valid_consensus}, Expertos válidos: {valid_experts}")
+                logger.debug(f"  Equipos: {consensus_data['equipo_visitante']} @ {consensus_data['equipo_local']}")
+                logger.debug(f"  Consenso: {consensus_data['direccion_consenso']} {consensus_data['porcentaje_consenso']}%")
+                logger.debug(f"  Expertos: {consensus_data['num_experts']}")
+            
+            return None
             
         except Exception as e:
-            logger.warning(f"Error al extraer datos de fila: {e}")
-        
-        return None
+            logger.debug(f"Error al extraer consenso de fila: {e}")
+            return None
     
-    @handle_errors
+    @log_exception
     def scrape_multiple_dates(self, start_date: str, end_date: str) -> List[Dict]:
         """
         Scrape consensos para múltiples fechas
@@ -208,20 +356,22 @@ class MLBScraper:
         logger.info(f"Scraping completado. Total de consensos: {len(all_consensus)}")
         return all_consensus
     
-    @handle_errors
+    @log_exception
     def get_live_consensus(self) -> List[Dict]:
-        """Obtiene consensos para partidos en vivo o próximos"""
+        """Obtiene consensos para partidos en vivo o próximos (versión síncrona)"""
         logger.info("Obteniendo consensos en vivo")
         
         today = datetime.now(self.timezone).strftime('%Y-%m-%d')
-        tomorrow = (datetime.now(self.timezone) + timedelta(days=1)).strftime('%Y-%m-%d')
         
-        # Obtener consensos de hoy y mañana
-        live_consensus = []
-        live_consensus.extend(self.scrape_mlb_consensus(today))
-        live_consensus.extend(self.scrape_mlb_consensus(tomorrow))
-        
-        return live_consensus
+        # Usar el método principal de scraping que ya está optimizado
+        try:
+            consensos = self.scrape_mlb_consensus(today)
+            logger.info(f"Obtenidos {len(consensos)} consensos en vivo")
+            return consensos
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo consensos en vivo: {e}")
+            return []
     
     def close(self):
         """Cierra la sesión del scraper"""
@@ -240,22 +390,26 @@ def main():
     """Función principal para testing del scraper"""
     import json
     
-    logger.info("=== PRUEBA DEL SCRAPER MLB ===")
+    logger.info("=== PRUEBA DEL SCRAPER MLB TOTALES ===")
     
     try:
         with MLBScraper() as scraper:
             # Probar scraping del día actual
             consensos = scraper.get_live_consensus()
             
-            print(f"\n📊 Consensos obtenidos: {len(consensos)}")
+            print(f"\n📊 Consensos de totales obtenidos: {len(consensos)}")
             
             if consensos:
-                print("\n🏈 Primeros 3 consensos:")
-                for i, consenso in enumerate(consensos[:3]):
+                print("\n🏈 Consensos encontrados:")
+                for i, consenso in enumerate(consensos):
                     print(f"\n{i+1}. {consenso['equipo_visitante']} @ {consenso['equipo_local']}")
-                    print(f"   Spread: {consenso['porcentaje_spread']}%")
-                    print(f"   Total: {consenso['porcentaje_total']}%")
-                    print(f"   ML: {consenso['porcentaje_moneyline']}%")
+                    print(f"   Consenso: {consenso['direccion_consenso']} {consenso['porcentaje_consenso']}%")
+                    print(f"   Over: {consenso['consenso_over']}% | Under: {consenso['consenso_under']}%")
+                    print(f"   Total Line: {consenso['total_line']}")
+                    print(f"   Expertos: {consenso['num_experts']}")
+                    print(f"   Hora: {consenso['hora_partido']}")
+            else:
+                print("\n⚠️  No se encontraron consensos para hoy")
             
             # Guardar datos de prueba
             with open('test_consensos_mlb.json', 'w', encoding='utf-8') as f:
