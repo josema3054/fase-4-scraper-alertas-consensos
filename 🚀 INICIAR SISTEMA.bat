@@ -1,5 +1,21 @@
 @echo off
-title SOFTWARE FASE 4 - CONSENSOS MLB
+title SOFTWA    🌟 1. INICIAR INTERFAZ WEB (Recomendado)
+    🧪 2. PROBAR SCRAPER CON DATOS REALES  
+    ⚙️  3. CONFIGURACIÓN AVANZADA
+    📋 4. VER ESTADO DEL SISTEMA
+    💾 5. VERIFICAR BASE DE DATOS
+    🚪 6. SALIR
+echo.
+echo    ═══════════════════════════════════════════════════════
+
+set /p opcion="    ➤ Selecciona una opción (1-6): "
+
+if "%opcion%"=="1" goto web
+if "%opcion%"=="2" goto test
+if "%opcion%"=="3" goto config
+if "%opcion%"=="4" goto estado  
+if "%opcion%"=="5" goto database
+if "%opcion%"=="6" goto salirSENSOS MLB
 color 0A
 
 :inicio
@@ -69,6 +85,22 @@ echo.
 echo    ⚙️ CONFIGURACIÓN AVANZADA
 echo    ═══════════════════════════════════════════════════════
 call ejecutar_software.bat
+goto inicio
+
+:database
+cls
+echo.
+echo    💾 VERIFICANDO BASE DE DATOS
+echo    ═══════════════════════════════════════════════════════
+echo.
+cd /d "c:\Users\JVILLA\Desktop\fase-4-scraper-alertas-consensos"
+call venv\Scripts\activate.bat
+echo    🔍 Verificando sistema de persistencia...
+echo.
+python -c "from src.database.data_manager import DataManager; import os; dm = DataManager(); print('    ✅ Base de datos existe:', os.path.exists(dm.db_path)); import sqlite3; conn = sqlite3.connect(dm.db_path); cursor = conn.execute('SELECT COUNT(*) FROM scraping_sessions'); sesiones = cursor.fetchone()[0]; cursor = conn.execute('SELECT COUNT(*) FROM scrapers_programados'); programados = cursor.fetchone()[0]; print(f'    📊 Sesiones guardadas: {sesiones}'); print(f'    ⏰ Scrapers programados: {programados}'); conn.close(); print('    ✅ Sistema de persistencia funcionando correctamente')"
+echo.
+echo    ═══════════════════════════════════════════════════════
+pause
 goto inicio
 
 :estado

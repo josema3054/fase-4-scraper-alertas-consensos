@@ -257,6 +257,140 @@
       "equipo_local": "TB",
       "consenso": "OVER 57%",
       "timestamp": "2025-07-21T12:28:26.620390-03:00"
+    },
+    "9bb95d3827b7": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 15%",
+      "timestamp": "2025-07-21T15:34:51.257075-03:00"
+    },
+    "437398050455": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 25%",
+      "timestamp": "2025-07-21T15:34:51.265470-03:00"
+    },
+    "e2b0f8ef5fbd": {
+      "equipo_visitante": "HOU",
+      "equipo_local": "AZ",
+      "consenso": "OVER 70%",
+      "timestamp": "2025-07-21T16:08:17.737167-03:00"
+    },
+    "7ed8306a6d24": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 68%",
+      "timestamp": "2025-07-21T16:08:17.739309-03:00"
+    },
+    "930047b28ccb": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 67%",
+      "timestamp": "2025-07-21T16:08:17.741741-03:00"
+    },
+    "318e73750b8f": {
+      "equipo_visitante": "DET",
+      "equipo_local": "PIT",
+      "consenso": "OVER 35%",
+      "timestamp": "2025-07-21T16:08:17.744248-03:00"
+    },
+    "ce988a453ea4": {
+      "equipo_visitante": "NYY",
+      "equipo_local": "TOR",
+      "consenso": "OVER 64%",
+      "timestamp": "2025-07-21T16:08:17.747867-03:00"
+    },
+    "3577de32bdbd": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 37%",
+      "timestamp": "2025-07-21T16:08:17.750574-03:00"
+    },
+    "6ba96563386f": {
+      "equipo_visitante": "MIN",
+      "equipo_local": "LAD",
+      "consenso": "OVER 56%",
+      "timestamp": "2025-07-21T16:08:17.754557-03:00"
+    },
+    "dd05d7476542": {
+      "equipo_visitante": "MIL",
+      "equipo_local": "SEA",
+      "consenso": "OVER 44%",
+      "timestamp": "2025-07-21T15:34:51.289856-03:00"
+    },
+    "86c60925553d": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 14%",
+      "timestamp": "2025-07-21T16:08:17.729225-03:00"
+    },
+    "85b6f8fe410e": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 24%",
+      "timestamp": "2025-07-21T16:08:17.733323-03:00"
+    },
+    "a6acd4397127": {
+      "equipo_visitante": "MIL",
+      "equipo_local": "SEA",
+      "consenso": "OVER 40%",
+      "timestamp": "2025-07-21T16:08:17.752450-03:00"
+    }
+  },
+  "2025-07-22": {
+    "1ce6d73de3a9": {
+      "equipo_visitante": "BAL",
+      "equipo_local": "CLE",
+      "consenso": "OVER 88%",
+      "timestamp": "2025-07-22T14:55:08.356674-03:00"
+    },
+    "969d487d52d6": {
+      "equipo_visitante": "SF",
+      "equipo_local": "ATL",
+      "consenso": "OVER 21%",
+      "timestamp": "2025-07-22T14:55:08.359671-03:00"
+    },
+    "ede2a35c7d28": {
+      "equipo_visitante": "SD",
+      "equipo_local": "MIA",
+      "consenso": "OVER 25%",
+      "timestamp": "2025-07-22T14:55:08.361670-03:00"
+    },
+    "0bacb1c951d1": {
+      "equipo_visitante": "CHW",
+      "equipo_local": "TB",
+      "consenso": "OVER 71%",
+      "timestamp": "2025-07-22T14:55:08.364411-03:00"
+    },
+    "ed7d835aa1fd": {
+      "equipo_visitante": "MIL",
+      "equipo_local": "SEA",
+      "consenso": "OVER 31%",
+      "timestamp": "2025-07-22T14:55:08.365592-03:00"
+    },
+    "64b4c43298e6": {
+      "equipo_visitante": "BOS",
+      "equipo_local": "PHI",
+      "consenso": "OVER 31%",
+      "timestamp": "2025-07-22T14:55:08.366805-03:00"
+    },
+    "930047b28ccb": {
+      "equipo_visitante": "CIN",
+      "equipo_local": "WAS",
+      "consenso": "OVER 67%",
+      "timestamp": "2025-07-22T14:55:08.368240-03:00"
+    },
+    "a17057000b08": {
+      "equipo_visitante": "ATH",
+      "equipo_local": "TEX",
+      "consenso": "OVER 63%",
+      "timestamp": "2025-07-22T14:55:08.370373-03:00"
+    },
+    "e999a167fa16": {
+      "equipo_visitante": "STL",
+      "equipo_local": "COL",
+      "consenso": "OVER 39%",
+      "timestamp": "2025-07-22T14:55:08.371978-03:00"
     }
   }
 }

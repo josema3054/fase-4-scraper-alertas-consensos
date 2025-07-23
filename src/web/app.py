@@ -21,9 +21,20 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 try:
     from src.database.supabase_client import SupabaseClient
+    from src.database.data_manager import data_manager
     from src.scraper.mlb_selenium_scraper import MLBSeleniumScraper
     from src.scraper.sistema_scraper_robusto import ScraperRobusto
     from config.settings import Settings
+    
+    # Importar background_service de forma segura
+    try:
+        from src.background_service import background_service
+        BACKGROUND_SERVICE_AVAILABLE = True
+    except ImportError as e:
+        st.warning(f"⚠️ Servicio de background no disponible: {e}")
+        background_service = None
+        BACKGROUND_SERVICE_AVAILABLE = False
+    
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
     st.warning(f"⚠️ Algunas dependencias no están disponibles: {e}")
@@ -123,15 +134,21 @@ class StreamlitApp:
                 self.settings = Settings()
                 self.db_client = SupabaseClient()
                 self.mlb_scraper = MLBSeleniumScraper()
+                
+                # Inicializar data_manager para persistencia
+                self.data_manager = data_manager
+                
                 st.success("✅ Selenium Scraper inicializado correctamente")
             except Exception as e:
                 st.error(f"❌ Error inicializando clientes: {e}")
                 self.db_client = None
                 self.mlb_scraper = None
+                self.data_manager = None
         else:
             st.info("ℹ️ Funcionando en modo limitado sin dependencias completas")
             self.db_client = None
             self.mlb_scraper = None
+            self.data_manager = None
     
     def render_header(self):
         """Renderiza el encabezado principal"""
@@ -247,11 +264,118 @@ class StreamlitApp:
                 'system_uptime': '--',
                 'active_filters': 0
             }
+    
+    def _mostrar_estado_sistema(self, sesion_hoy, stats_hoy):
+        """Muestra el estado actual del sistema"""
+        st.markdown("### 📊 **Estado del Sistema**")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if sesion_hoy:
+                st.metric(
+                    label="📋 Última Sesión",
+                    value=f"{sesion_hoy.total_partidos} partidos",
+                    delta=f"Hace {self._tiempo_transcurrido(sesion_hoy.hora_ejecucion)}"
+                )
+            else:
+                st.metric(label="📋 Última Sesión", value="Sin datos", delta="Nunca")
+        
+        with col2:
+            scrapers_activos = stats_hoy['scrapers_automaticos']['pendientes']
+            st.metric(
+                label="🤖 Scrapers Activos", 
+                value=scrapers_activos,
+                delta=f"{stats_hoy['scrapers_automaticos']['ejecutados']} ejecutados hoy"
+            )
+        
+        with col3:
+            # Estado del servicio de background
+            if BACKGROUND_SERVICE_AVAILABLE and background_service:
+                service_status = background_service.get_status()
+                status_text = "🟢 Activo" if service_status['servicio_activo'] else "🔴 Inactivo"
+                telegram_status = "Telegram OK" if service_status['telegram_configurado'] else "Sin Telegram"
+            else:
+                status_text = "❌ No disponible"
+                telegram_status = "Servicio no cargado"
+                
+            st.metric(
+                label="⚙️ Servicio Auto",
+                value=status_text,
+                delta=telegram_status
+            )
+        
+        with col4:
+            total_sesiones = stats_hoy['sesiones_scraping']['total']
+            st.metric(
+                label="📊 Sesiones Hoy",
+                value=total_sesiones,
+                delta=f"Promedio: {stats_hoy['sesiones_scraping']['promedio_partidos']} partidos"
+            )
+        
+        # Panel de control del servicio
+        if BACKGROUND_SERVICE_AVAILABLE and background_service:
+            service_status = background_service.get_status()
+            if not service_status['servicio_activo']:
+                st.warning("⚠️ **Servicio automático inactivo** - Los scrapers programados no se ejecutarán")
+                if st.button("🚀 **INICIAR SERVICIO AUTOMÁTICO**", type="secondary"):
+                    background_service.start_service()
+                    st.success("✅ Servicio iniciado")
+                    st.rerun()
+            else:
+                st.success("✅ **Servicio automático activo** - Monitoreando scrapers programados")
+        else:
+            st.info("ℹ️ **Servicio automático no disponible** - Los scrapers se pueden programar pero no ejecutarán automáticamente")
+        
+        st.markdown("---")
+    
+    def _tiempo_transcurrido(self, hora_str):
+        """Calcula el tiempo transcurrido desde una hora"""
+        try:
+            from datetime import datetime
+            now = datetime.now()
+            hora_ejecutada = datetime.strptime(f"{now.strftime('%Y-%m-%d')} {hora_str}", '%Y-%m-%d %H:%M:%S')
+            
+            if hora_ejecutada.date() < now.date():
+                return "más de 1 día"
+            
+            diff = now - hora_ejecutada
+            minutes = int(diff.total_seconds() / 60)
+            
+            if minutes < 60:
+                return f"{minutes} min"
+            else:
+                hours = int(minutes / 60)
+                return f"{hours}h {minutes % 60}min"
+        except:
+            return "N/A"
 
     def render_dashboard(self):
         """Renderiza el dashboard principal con los 3 pasos principales"""
         st.title("🏈 Sistema de Consensos MLB - Inicio")
         st.markdown("---")
+        
+        # Verificar si hay datos del día actual en la base de datos
+        sesion_hoy = data_manager.obtener_sesion_del_dia()
+        stats_hoy = data_manager.obtener_estadisticas_hoy()
+        
+        # Panel de estado del sistema
+        self._mostrar_estado_sistema(sesion_hoy, stats_hoy)
+        
+        # Si hay datos del día, cargarlos automáticamente en session_state
+        if sesion_hoy and sesion_hoy.datos_raw:
+            # Verificar si necesitamos actualizar los datos
+            datos_actuales = st.session_state.get('consensus_data', [])
+            
+            # Cargar si no hay datos o si los datos guardados son más recientes
+            if not datos_actuales or len(datos_actuales) != sesion_hoy.total_partidos:
+                st.session_state.consensus_data = sesion_hoy.datos_raw
+                st.session_state.live_consensus_data = sesion_hoy.datos_raw
+                st.session_state.all_consensus_data = sesion_hoy.datos_raw
+                st.success(f"✅ **Datos del día cargados automáticamente** - {sesion_hoy.total_partidos} partidos ({sesion_hoy.hora_ejecucion})")
+        elif not st.session_state.get('consensus_data', []):
+            # Solo mostrar mensaje si realmente no hay datos
+            st.info("ℹ️ No hay datos del día actual. Usa el scraping manual para obtener datos.")
         
         # Intro y pasos principales
         st.markdown("""
@@ -272,9 +396,13 @@ class StreamlitApp:
             
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.info("💡 **Tip:** El scraping puede tardar 1-3 minutos. Se obtendrán TODOS los partidos del día sin filtrar.")
+                if sesion_hoy:
+                    st.info(f"ℹ️ **Ya hay datos de hoy:** {sesion_hoy.total_partidos} partidos scrapeados a las {sesion_hoy.hora_ejecucion}. Puedes hacer un nuevo scraping para actualizar.")
+                else:
+                    st.info("💡 **Tip:** El scraping puede tardar 1-3 minutos. Se obtendrán TODOS los partidos del día sin filtrar.")
             with col2:
-                if st.button("🚀 **EJECUTAR SCRAPING**", type="primary", key="main_scraping_btn"):
+                button_text = "🔄 **ACTUALIZAR DATOS**" if sesion_hoy else "🚀 **EJECUTAR SCRAPING**"
+                if st.button(button_text, type="primary", key="main_scraping_btn"):
                     self.run_manual_scraping_robusto()
             
             # Mostrar estado del último scraping
@@ -1263,9 +1391,28 @@ class StreamlitApp:
                     st.write("N/A")
     
     def refresh_data(self):
-        """Actualiza los datos del sistema"""
+        """Actualiza los datos del sistema cargando desde base de datos"""
+        try:
+            if DEPENDENCIES_AVAILABLE and hasattr(self, 'data_manager'):
+                # Intentar cargar datos de la sesión de hoy
+                sesion_hoy = self.data_manager.obtener_sesion_hoy()
+                
+                if sesion_hoy and sesion_hoy.datos_raw:
+                    # Cargar datos existentes
+                    st.session_state.consensus_data = sesion_hoy.datos_raw
+                    st.session_state.live_consensus_data = sesion_hoy.datos_raw
+                    st.session_state.all_consensus_data = sesion_hoy.datos_raw
+                    
+                    st.success(f"✅ Datos cargados: {len(sesion_hoy.datos_raw)} partidos de la sesión de hoy ({sesion_hoy.hora_ejecucion})")
+                else:
+                    st.warning("⚠️ No hay datos guardados para hoy. Ejecuta el scraping para obtener datos.")
+            else:
+                st.error("❌ Sistema de base de datos no disponible")
+                
+        except Exception as e:
+            st.error(f"❌ Error al cargar datos: {str(e)}")
+        
         st.session_state.last_update = datetime.now(self.timezone)
-        st.success("🔄 Datos actualizados")
         st.rerun()
     
     def run_manual_scraping(self):
@@ -1412,36 +1559,70 @@ class StreamlitApp:
         st.success("✅ Proceso completado")
 
     def _obtener_datos_para_visualizacion(self, sistema_robusto, resultado):
-        """Obtiene datos para mostrar en la interfaz web"""
+        """Obtiene datos para mostrar en la interfaz web y los guarda en la base de datos"""
         try:
             # Opción 1: Hacer un scraping fresh directo para obtener datos sin filtrar
             st.info("🔄 Obteniendo datos completos para visualización...")
+            inicio = time.time()
             
             if hasattr(self, 'mlb_scraper') and self.mlb_scraper:
                 consensos_completos = self.mlb_scraper.scrape_mlb_consensus()
                 if consensos_completos:
                     # Procesar y limpiar los datos para la interfaz
                     datos_procesados = self._procesar_datos_para_tabla(consensos_completos)
+                    duracion = time.time() - inicio
                     
+                    # Guardar en base de datos usando DataManager
+                    session_id = data_manager.guardar_sesion_scraping(
+                        datos=datos_procesados,
+                        filtros={},  # No se aplicaron filtros en la visualización
+                        duracion=duracion,
+                        errores=[]
+                    )
+                    
+                    # Guardar en session_state para uso inmediato
                     st.session_state.consensus_data = datos_procesados
                     st.session_state.live_consensus_data = datos_procesados
                     st.session_state.all_consensus_data = datos_procesados
                     st.session_state.last_update = datetime.now(self.timezone)
+                    st.session_state.current_session_id = session_id
                     
-                    st.success(f"📊 Se guardaron {len(datos_procesados)} consensos para visualización")
+                    st.success(f"📊 Se guardaron {len(datos_procesados)} consensos (ID: {session_id})")
                     return
                 else:
                     st.warning("⚠️ No se pudieron obtener datos frescos")
             
             # Opción 2: Usar datos dummy basados en lo que se extrajo
             st.info("🔄 Creando datos de ejemplo basados en el scraping exitoso...")
-            self._crear_datos_reales_dummy(resultado['consensos_encontrados'])
+            datos_dummy = self._crear_datos_reales_dummy(resultado['consensos_encontrados'])
+            duracion = time.time() - inicio
+            
+            # Guardar datos dummy también en la base de datos
+            session_id = data_manager.guardar_sesion_scraping(
+                datos=datos_dummy,
+                filtros={},
+                duracion=duracion,
+                errores=["Usados datos de ejemplo - scraping real no disponible"]
+            )
+            
+            st.session_state.current_session_id = session_id
+            st.info(f"💡 Datos de ejemplo guardados (ID: {session_id})")
                 
         except Exception as e:
             st.error(f"❌ Error obteniendo datos para visualización: {e}")
             # Como último recurso, crear datos dummy
             st.info("🔄 Creando datos de ejemplo para visualización...")
-            self._crear_datos_reales_dummy(resultado['consensos_encontrados'])
+            try:
+                datos_dummy = self._crear_datos_reales_dummy(resultado.get('consensos_encontrados', 5))
+                session_id = data_manager.guardar_sesion_scraping(
+                    datos=datos_dummy,
+                    filtros={},
+                    duracion=0,
+                    errores=[f"Error en scraping: {str(e)}"]
+                )
+                st.session_state.current_session_id = session_id
+            except Exception as e2:
+                st.error(f"❌ Error crítico: {e2}")
 
     def _procesar_datos_para_tabla(self, consensos_raw):
         """Procesa datos raw del scraper para la tabla de visualización"""
@@ -1659,7 +1840,7 @@ class StreamlitApp:
         self.mostrar_datos_scraping_mejorado()
         
     def programar_scrapers_automaticos(self):
-        """Programa scrapers automáticos 15 minutos antes de cada partido"""
+        """Programa scrapers automáticos 15 minutos antes de cada partido usando DataManager"""
         st.info("⏰ Programando scrapers automáticos...")
         
         try:
@@ -1669,10 +1850,6 @@ class StreamlitApp:
             
             partidos = st.session_state.consensus_data
             
-            # Inicializar estructura de scrapers programados si no existe
-            if 'scheduled_scrapers' not in st.session_state:
-                st.session_state.scheduled_scrapers = {}
-            
             scrapers_nuevos = 0
             scrapers_existentes = 0
             
@@ -1681,53 +1858,37 @@ class StreamlitApp:
             
             for partido in partidos:
                 try:
-                    # Identificador único del partido
-                    visitante = partido.get('visitante', 'N/A')
-                    local = partido.get('local', 'N/A')
-                    hora_partido = partido.get('hora', 'N/A')
+                    # Programar scraper usando DataManager
+                    scraper_id = data_manager.programar_scraper(partido)
                     
-                    partido_id = f"{visitante}@{local}_{partido.get('fecha', '')}"
+                    # Verificar si era nuevo o existente por el resultado
+                    scrapers_existentes_db = data_manager.obtener_scrapers_programados(solo_activos=True)
+                    scraper_programado = next((s for s in scrapers_existentes_db if s.id == scraper_id), None)
                     
-                    # Calcular hora de scraping (simplificado)
-                    hora_scraping = f"15 min antes de {hora_partido}"
-                    
-                    # Obtener consenso predominante
-                    over_pct = float(partido.get('over_percentage', '0').replace('%', ''))
-                    under_pct = float(partido.get('under_percentage', '0').replace('%', ''))
-                    
-                    if over_pct > under_pct:
-                        consenso = f"OVER {over_pct:.0f}%"
-                    else:
-                        consenso = f"UNDER {under_pct:.0f}%"
-                    
-                    # Determinar si ya existe este scraper
-                    if partido_id in st.session_state.scheduled_scrapers:
-                        estado = "✅ Ya programado"
-                        scrapers_existentes += 1
-                    else:
-                        # Programar nuevo scraper
-                        st.session_state.scheduled_scrapers[partido_id] = {
-                            'partido': f"{visitante} @ {local}",
-                            'hora_partido': hora_partido,
-                            'hora_scraping': hora_scraping,
-                            'consenso': consenso,
-                            'fecha_programacion': datetime.now(self.timezone).isoformat(),
-                            'activo': True
-                        }
-                        estado = "🆕 Nuevo"
-                        scrapers_nuevos += 1
-                    
-                    # Agregar a la tabla
-                    programacion_data.append({
-                        'Partido': f"{visitante} @ {local}",
-                        'Hora Partido': hora_partido,
-                        'Scraping Automático': hora_scraping,
-                        'Consenso': consenso,
-                        'Estado': estado
-                    })
+                    if scraper_programado:
+                        # Determinar estado basado en cuándo se creó
+                        ahora = datetime.now()
+                        creado = datetime.fromisoformat(scraper_programado.creado_en.replace('Z', '+00:00').replace('+00:00', ''))
+                        
+                        # Si se creó en los últimos 10 segundos, es nuevo
+                        if (ahora - creado).total_seconds() < 10:
+                            estado = "🆕 Nuevo"
+                            scrapers_nuevos += 1
+                        else:
+                            estado = "✅ Ya programado"  
+                            scrapers_existentes += 1
+                        
+                        # Agregar a la tabla
+                        programacion_data.append({
+                            'Partido': f"{scraper_programado.visitante} @ {scraper_programado.local}",
+                            'Hora Partido': scraper_programado.hora_partido,
+                            'Scraping Automático': scraper_programado.hora_scraping,
+                            'Consenso': scraper_programado.consenso_actual,
+                            'Estado': estado
+                        })
                     
                 except Exception as e:
-                    st.warning(f"⚠️ Error procesando {visitante} @ {local}: {e}")
+                    st.warning(f"⚠️ Error procesando {partido.get('visitante', 'N/A')} @ {partido.get('local', 'N/A')}: {e}")
                     continue
             
             # Mostrar resultados
@@ -1742,10 +1903,6 @@ class StreamlitApp:
                     st.info(f"✅ **{scrapers_existentes} ya existían**")
                 else:
                     st.info("ℹ️ **0 existentes**")
-            with col3:
-                total_activos = len(st.session_state.scheduled_scrapers)
-                st.metric("🤖 Total", total_activos)
-            
             # SIEMPRE mostrar la tabla si hay datos
             if programacion_data:
                 st.markdown("---")
@@ -1871,19 +2028,21 @@ class StreamlitApp:
             st.code(traceback.format_exc())
 
     def mostrar_scrapers_programados(self):
-        """Muestra tabla de scrapers programados con diseño mejorado"""
-        if 'scheduled_scrapers' in st.session_state and st.session_state.scheduled_scrapers:
+        """Muestra tabla de scrapers programados con diseño mejorado usando DataManager"""
+        scrapers_programados = data_manager.obtener_scrapers_programados(solo_activos=True)
+        
+        if scrapers_programados:
             st.markdown("### 📋 **PRÓXIMOS SCRAPERS PROGRAMADOS**")
             st.markdown("---")
             
             tabla_scrapers = []
-            for scraper_id, info in st.session_state.scheduled_scrapers.items():
-                estado_icon = '🟢 Activo' if info.get('activo', True) else '🔴 Inactivo'
+            for scraper in scrapers_programados:
+                estado_icon = '🟢 Programado' if scraper.estado == 'programado' else '🔴 Error' if scraper.estado == 'error' else '✅ Ejecutado'
                 tabla_scrapers.append({
-                    'Partido': info['partido'],
-                    'Hora del Juego': info['hora_partido'], 
-                    'Scraper Ejecuta': info['hora_scraping'],
-                    'Consenso Actual': info['consenso'],
+                    'Partido': scraper.partido_id,
+                    'Hora del Juego': scraper.hora_partido, 
+                    'Scraper Ejecuta': scraper.hora_scraping,
+                    'Consenso Actual': scraper.consenso_actual,
                     'Estado': estado_icon
                 })
             
@@ -1932,8 +2091,16 @@ class StreamlitApp:
                 with col_info1:
                     st.info("⏰ **Los scrapers se ejecutan automáticamente 15 minutos antes de cada partido**")
                 with col_info2:
-                    total_activos = len([s for s in tabla_scrapers if '🟢' in s['Estado']])
+                    total_activos = len([s for s in scrapers_programados if s.estado == 'programado'])
                     st.success(f"✅ **{total_activos} scrapers activos monitoreando**")
+                
+                # Botón para limpiar scrapers (usando DataManager)
+                if st.button("🗑️ **LIMPIAR TODOS**", key="clear_scrapers_db", type="secondary"):
+                    # Actualizar todos a cancelado en lugar de eliminar
+                    for scraper in scrapers_programados:
+                        data_manager.actualizar_estado_scraper(scraper.id, "cancelado")
+                    st.success("🗑️ Todos los scrapers cancelados")
+                    st.rerun()
             else:
                 st.info("📭 No hay scrapers programados")
         else:
