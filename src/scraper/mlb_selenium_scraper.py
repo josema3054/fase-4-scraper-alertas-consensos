@@ -38,25 +38,21 @@ class MLBSeleniumScraper:
     def _setup_driver(self):
         """Configurar Chrome driver FORZADAMENTE VISIBLE"""
         try:
-            logger.info("🔧 Configurando Chrome driver VISIBLE...")
-            
+            logger.info("🔧 Configurando Chrome driver en modo HEADLESS...")
             chrome_options = Options()
-            
-            # CONFIGURACIONES CRÍTICAS PARA VISIBILIDAD
-            chrome_options.add_argument('--start-maximized')  # Maximizar ventana
+            # Configuraciones generales
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
-            
             # User agent realista
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-            
-            # CRÍTICO: NUNCA USAR HEADLESS - DEBE SER VISIBLE
-            # chrome_options.add_argument('--headless')  # ¡JAMÁS DESCOMENTES ESTA LÍNEA!
-            
-            logger.info("📱 Modo VISIBLE FORZADO - navegador será completamente visible")
+            # Modo headless recomendado para servidores
+            chrome_options.add_argument('--headless=new')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
+            logger.info("🤖 Modo HEADLESS habilitado - navegador NO será visible")
             
             # Desactivar imágenes para velocidad pero mantener visibilidad
             prefs = {
